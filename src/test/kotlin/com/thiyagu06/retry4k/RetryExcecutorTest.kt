@@ -7,11 +7,10 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
-
 class RetryExecutorTest {
 
-    private interface DummyAction {
-        fun noop(): String
+    private interface NoOpAction {
+        fun noOp(): String
     }
 
     @BeforeEach
@@ -25,15 +24,15 @@ class RetryExecutorTest {
         val retryStrategy =
             RetryStrategy.Builder<String>().maxAttempt(3).retryOnException(NullPointerException::class.java).build()
 
-        val retryExecutor = RetryExecutor<String>(retryStrategy)
+        val retryExecutor = RetryExecutor(retryStrategy)
 
-        val dummyAction = mockk<DummyAction>()
+        val dummyAction = mockk<NoOpAction>()
 
-        every { dummyAction.noop() } throws RuntimeException()
+        every { dummyAction.noOp() } throws RuntimeException()
 
-        assertThatExceptionOfType(RuntimeException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noop() } }
+        assertThatExceptionOfType(RuntimeException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
-        verify(exactly = 1) { dummyAction.noop() }
+        verify(exactly = 1) { dummyAction.noOp() }
     }
 
     @Test
@@ -44,13 +43,13 @@ class RetryExecutorTest {
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
-        val dummyAction = mockk<DummyAction>()
+        val dummyAction = mockk<NoOpAction>()
 
-        every { dummyAction.noop() } throws RuntimeException()
+        every { dummyAction.noOp() } throws RuntimeException()
 
-        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noop() } }
+        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
-        verify(exactly = 2) { dummyAction.noop() }
+        verify(exactly = 2) { dummyAction.noOp() }
     }
 
     @Test
@@ -63,13 +62,13 @@ class RetryExecutorTest {
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
-        val dummyAction = mockk<DummyAction>()
+        val dummyAction = mockk<NoOpAction>()
 
-        every { dummyAction.noop() } returns "retryme"
+        every { dummyAction.noOp() } returns "retryme"
 
-        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noop() } }
+        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
-        verify(exactly = 2) { dummyAction.noop() }
+        verify(exactly = 2) { dummyAction.noOp() }
     }
 
     @Test
@@ -82,13 +81,13 @@ class RetryExecutorTest {
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
-        val dummyAction = mockk<DummyAction>()
+        val dummyAction = mockk<NoOpAction>()
 
-        every { dummyAction.noop() } returns "success"
+        every { dummyAction.noOp() } returns "success"
 
-        retryExecutor.execute { dummyAction.noop() }
+        retryExecutor.execute { dummyAction.noOp() }
 
-        verify(exactly = 1) { dummyAction.noop() }
+        verify(exactly = 1) { dummyAction.noOp() }
     }
 
     @Test
@@ -101,12 +100,12 @@ class RetryExecutorTest {
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
-        val dummyAction = mockk<DummyAction>()
+        val dummyAction = mockk<NoOpAction>()
 
-        every { dummyAction.noop() } throws IllegalArgumentException()
+        every { dummyAction.noOp() } throws IllegalArgumentException()
 
-        assertThatExceptionOfType(IllegalArgumentException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noop() } }
+        assertThatExceptionOfType(IllegalArgumentException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
-        verify(exactly = 1) { dummyAction.noop() }
+        verify(exactly = 1) { dummyAction.noOp() }
     }
 }

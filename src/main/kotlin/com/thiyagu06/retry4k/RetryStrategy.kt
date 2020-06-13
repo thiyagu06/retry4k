@@ -1,16 +1,16 @@
 package com.thiyagu06.retry4k
 
-class RetryStrategy<T> internal constructor(config: Builder<T>) {
+private const val DEFAULT_WAIT_TIME_SECONDS = 1000L
+class RetryStrategy<T> private constructor(config: Builder<T>) {
 
-    internal val retryableException: MutableSet<Class<out Throwable>> = config.retryableException
     internal val maxAttempt: Int = config.maxAttempt
     internal var waitStrategy: ((Int) -> Long) = config.waitStrategy
-    internal val ignorableException: MutableSet<Class<out Throwable>> = config.ignorableException
     internal val retryOnResult: ((T) -> Boolean) = config.retryOnResult
+    internal val exceptionPredicate: ExceptionPredicate = convertExceptionsToPredicate(config)
 
-   data class Builder<T> internal constructor(
+    class Builder<T> internal constructor(
          var retryableException: MutableSet<Class<out Throwable>> = mutableSetOf(),
-         var waitStrategy: (Int) -> Long = { _ -> 1000 },
+         var waitStrategy: (Int) -> Long = { _ -> DEFAULT_WAIT_TIME_SECONDS },
          var maxAttempt: Int = 0,
          var ignorableException: MutableSet<Class<out Throwable>> = mutableSetOf(),
          var retryOnResult: ((T) -> Boolean) = {false}
