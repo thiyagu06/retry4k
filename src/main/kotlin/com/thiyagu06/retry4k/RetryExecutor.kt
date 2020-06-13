@@ -16,7 +16,6 @@ class RetryExecutor<T>(private val retryStrategy: RetryStrategy<T>) {
                  lastThrowable = e
                 if(isRetryAttemptExceeded(retryCount)) throw  ExceededRetryAttemptException()
                 if(!shouldRetryOnException(e) || shouldIgnoreOnException(e)) throw lastThrowable
-
             }
             retryCount++
             Thread.sleep(retryStrategy.waitStrategy(retryCount))

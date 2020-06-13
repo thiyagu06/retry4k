@@ -97,7 +97,7 @@ class RetryExecutorTest {
         val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().maxAttempt(5).retryOnException(NullPointerException::class.java).retryOnResult(retryOnResult).ignoreOnException(IllegalArgumentException::class.java).build()
+            RetryStrategy.Builder<String>().waitDuration(1000).maxAttempt(5).retryOnException(NullPointerException::class.java).retryOnResult(retryOnResult).ignoreOnException(IllegalArgumentException::class.java).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
