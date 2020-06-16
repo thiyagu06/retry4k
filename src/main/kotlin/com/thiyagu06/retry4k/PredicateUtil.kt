@@ -1,6 +1,6 @@
 package com.thiyagu06.retry4k
 
-fun <T> convertExceptionsToPredicate(config: RetryStrategy.Builder<T>): ExceptionPredicate {
+fun <T> convertExceptionsToPredicate(config: RetryOptions.Builder<T>): ExceptionPredicate {
 
     val defaultPredicate: ExceptionPredicate = { true }
     val retryOnExceptionPredicate = createPredicate(config.retryableException) ?: defaultPredicate

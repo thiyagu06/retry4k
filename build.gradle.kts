@@ -46,6 +46,7 @@ tasks {
         classDirectories.setFrom(
             sourceSets.main.get().output.asFileTree.matching {
                 exclude("com/thiyagu06/retry4k/RetryStrategy.Builder.class")
+                exclude("com/thiyagu06/retry4k/AttemptStatus.class")
                 exclude()
             }
         )

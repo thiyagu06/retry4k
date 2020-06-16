@@ -13,6 +13,11 @@ class RetryExecutorTest {
         fun noOp(): String
     }
 
+    private interface NoOpListener<T> {
+        fun beforeRetry(throwable: Throwable?,result: T?, attempt: Int)
+        fun onComplete(throwable: Throwable?, result: T?, attempt: Int)
+    }
+
     @BeforeEach
     fun setup() {
         clearAllMocks()
@@ -22,7 +27,7 @@ class RetryExecutorTest {
     internal fun `it should not retry any exception occurred during action if exception is not specified for retry`() {
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().maxAttempt(3).retryOnException(NullPointerException::class.java).build()
+            RetryOptions.Builder<String>().maxAttempt(3).retryOnException(NullPointerException::class.java).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
@@ -39,7 +44,7 @@ class RetryExecutorTest {
     internal fun `it should retry once if an exception occurred during action and it is specified for retry`() {
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).build()
+            RetryOptions.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
@@ -47,7 +52,7 @@ class RetryExecutorTest {
 
         every { dummyAction.noOp() } throws RuntimeException()
 
-        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
+        assertThatExceptionOfType(RetryExhaustedException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
         verify(exactly = 2) { dummyAction.noOp() }
     }
@@ -58,7 +63,7 @@ class RetryExecutorTest {
         val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).retryOnResult(retryOnResult).build()
+            RetryOptions.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).retryOnResult(retryOnResult).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
@@ -66,7 +71,7 @@ class RetryExecutorTest {
 
         every { dummyAction.noOp() } returns "retryme"
 
-        assertThatExceptionOfType(ExceededRetryAttemptException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
+        assertThatExceptionOfType(RetryExhaustedException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
         verify(exactly = 2) { dummyAction.noOp() }
     }
@@ -77,7 +82,7 @@ class RetryExecutorTest {
         val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).retryOnResult(retryOnResult).build()
+            RetryOptions.Builder<String>().maxAttempt(1).retryOnException(RuntimeException::class.java).retryOnResult(retryOnResult).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
@@ -96,7 +101,7 @@ class RetryExecutorTest {
         val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
 
         val retryStrategy =
-            RetryStrategy.Builder<String>().waitDuration(1000).maxAttempt(5).retryOnException(NullPointerException::class.java).retryOnResult(retryOnResult).ignoreOnException(IllegalArgumentException::class.java).build()
+            RetryOptions.Builder<String>().waitDuration(1000).maxAttempt(5).retryOnException(NullPointerException::class.java).retryOnResult(retryOnResult).ignoreOnException(IllegalArgumentException::class.java).build()
 
         val retryExecutor = RetryExecutor(retryStrategy)
 
@@ -107,5 +112,37 @@ class RetryExecutorTest {
         assertThatExceptionOfType(IllegalArgumentException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
 
         verify(exactly = 1) { dummyAction.noOp() }
+    }
+
+    @Test
+    internal fun `should call listener methods before every retry and completion of execution`() {
+
+        val dummyListener = mockk<NoOpListener<String>>()
+
+        val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
+
+        every { dummyListener.beforeRetry(any(),any(), any()) } returns Unit
+
+        every { dummyListener.onComplete(any(),any(), any()) } returns Unit
+
+        val beforeRetry:(Throwable?, String?, Int) -> Unit = { t,r, i -> dummyListener.beforeRetry(t, r, i)}
+
+        val onCompleted:(Throwable?, String?, Int) -> Unit = { t,r, i -> dummyListener.onComplete(t, r, i)}
+
+        val retryStrategy =
+            RetryOptions.Builder<String>().waitDuration(1000).maxAttempt(5).retryOnException(NullPointerException::class.java).retryOnResult(retryOnResult).ignoreOnException(IllegalArgumentException::class.java)
+                .doOnBeforeRetry(beforeRetry).doOnCompleted(onCompleted).build()
+
+        val retryExecutor = RetryExecutor(retryStrategy)
+
+        val dummyAction = mockk<NoOpAction>()
+
+        every { dummyAction.noOp() } throws NullPointerException()
+
+        assertThatExceptionOfType(RetryExhaustedException::class.java).isThrownBy { retryExecutor.execute { dummyAction.noOp() } }
+
+        verify(exactly = 6) { dummyAction.noOp() }
+        verify(exactly = 5) {dummyListener.beforeRetry(any(), any(),any())}
+        verify(exactly = 1) {dummyListener.onComplete(any(), any(),any())}
     }
 }
