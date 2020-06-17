@@ -1,0 +1,93 @@
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.2
+executors:
+  build_env:
+    machine:
+      image: ubuntu-1604:201903-01
+commons:
+  defaults: &defaults
+    persist: &persist
+      root: ~/project
+    attach_root: &attach_root
+      at: ~/project
+aliases:
+  - &restore_dep_cache
+    name: Restore the dependency cache
+    keys:
+      - gradle-cache-{{ checksum "build.gradle.kts" }}-{{ checksum "gradle.properties" }}
+      - gradle-cache-{{ checksum "build.gradle.kts" }}-
+      - gradle-cache-
+  - &save_dep_cache
+    name: Save the dependency cache
+    key: gradle-cache-{{ checksum "build.gradle.kts" }}-{{ checksum "gradle.properties" }}
+    paths:
+      - ~/.gradle/caches/modules-2/files-2.1/
+    when: always
+  - &save_gradle_binary
+    name: Save the Gradle binary
+    key: gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+    paths:
+      - ~/.gradle/wrapper
+    when: always
+  - &restore_gradle_binary
+    name: Restore the Gradle binary
+    keys:
+      - gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - gradle-wrapper-
+  - &install_java14
+    name: install JDK14
+    command: |
+      if ! [ -f ~/openjdk-14_linux-x64_bin.tar.gz ]; then
+        cd ~
+        wget https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz
+        echo "c7006154dfb8b66328c6475447a396feb0042608ee07a96956547f574a911c09 openjdk-14_linux-x64_bin.tar.gz" > jdk-14-checksum.txt
+        sha256sum -c jdk-14-checksum.txt
+      fi
+      cd /usr/lib/jvm
+      sudo tar xzf ~/openjdk-14_linux-x64_bin.tar.gz
+  - &save_jdk_cache
+    name: cache JDK installation
+    key:  v1-jdk14
+    paths:
+      - ~/openjdk-14_linux-x64_bin.tar.gz
+jobs:
+  build:
+    executor: build_env
+    environment:
+      JAVA_HOME: /usr/lib/jvm/jdk-14
+    steps:
+      - checkout
+      - attach_workspace:
+          <<: *attach_root
+      - restore_cache:
+          name: Restore JDK14 cached
+          keys:
+            - v1-jdk14
+      - run: *install_java14
+      - restore_cache: *restore_gradle_binary
+      - restore_cache: *restore_dep_cache
+      - run:
+          name: Build and test the code
+          command: ./gradlew clean build test
+      - save_cache: *save_jdk_cache
+      - save_cache: *save_dep_cache
+      - save_cache: *save_gradle_binary
+      - store_test_results:
+          path: ~/project/build/test-results
+          when: always
+      - store_artifacts:
+          path: ~/project/build/jacoco
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+      - codecov/upload:
+          file:   ~/project/build/jacoco
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          context: Java

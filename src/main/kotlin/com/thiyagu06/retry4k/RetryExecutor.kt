@@ -15,7 +15,6 @@ class RetryExecutor<T>(private val retryOptions: RetryOptions<T>) {
                 }
                 handleFailedTry(currentStatus, currentAttempt)
                 currentAttempt++
-                Thread.sleep(retryOptions.waitStrategy(currentAttempt))
             }
         } finally {
             retryOptions.onCompleted?.let { it(currentStatus!!.exception, currentStatus.result, currentAttempt) }
@@ -26,6 +25,7 @@ class RetryExecutor<T>(private val retryOptions: RetryOptions<T>) {
         if (currentAttempt >= retryOptions.maxAttempt) {
             throw RetryExhaustedException("Retry failed after attempted for $currentAttempt")
         }
+        Thread.sleep(retryOptions.waitStrategy(currentAttempt))
         retryOptions.beforeRetry?.let { it(currentStatus.exception, currentStatus.result, currentAttempt) }
     }
 
