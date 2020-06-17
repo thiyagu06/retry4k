@@ -73,18 +73,17 @@ jobs:
       - save_cache: *save_jdk_cache
       - save_cache: *save_dep_cache
       - save_cache: *save_gradle_binary
+      - codecov/upload:
+          file:   ~/project/build/reports/jacoco/jacoco*.xml
       - store_test_results:
           path: ~/project/build/test-results
           when: always
       - store_artifacts:
-          path: ~/project/build/jacoco
+          path: ~/project/build/reports/jacoco
       - persist_to_workspace:
           root: ~/project
           paths:
             - .
-      - codecov/upload:
-          file:   ~/project/build/jacoco
-
 workflows:
   version: 2
   build:
