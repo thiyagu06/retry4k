@@ -1,14 +1,14 @@
 # retry4k
-Retry4k is resilience and fault tolerance library written in kotlin
+Retry4k is resilience and fault tolerance library written in kotlin.
 
 ## Usage
- 
-``` 
+
+```kotlin
 //retry maximum of 3 times if nullpointer exception occurred
  RetryOptions.Builder<String>().maxAttempt(3).retryOnException(NullPointerException::class.java).build()
 ```
 
-``` 
+```kotlin 
 //retry maximum of 3 times if action returns returns result with string retryme and wait for 1000ms before every retry
 
  val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
@@ -17,7 +17,7 @@ Retry4k is resilience and fault tolerance library written in kotlin
 
 ```
 
-``` 
+```kotlin 
 //Don't retry if the exception thrown by action is IllegalArgumentException. 
 
  val retryOnResult: (String) -> Boolean = {result -> result == "retryme"}
@@ -26,7 +26,7 @@ Retry4k is resilience and fault tolerance library written in kotlin
 ```
 
 
-``` 
+```kotlin 
 //Do some action before every retry attempt and after completion of either successfull or failure execution of action. 
 
  val beforeRetry:(Throwable?, String?, Int) -> Unit = { throwable,result, cuurentAttempt -> println("attempting for $cuurentAttempt time)}
@@ -39,7 +39,7 @@ Retry4k is resilience and fault tolerance library written in kotlin
 
 ## Execution
 
-```
+```kotlin
     val retryOption = RetryOptions.Builder<String>().maxAttempt(3).retryOnException(NullPointerException::class.java).build()
     val retryExecutor = RetryExecutor(retryOption)
     retryExecutor.execute { business logic }
