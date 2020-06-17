@@ -1,6 +1,11 @@
 # retry4k
 Retry4k is resilience and fault tolerance library written in kotlin.
 
+[![Kotlin version badge](https://img.shields.io/badge/kotlin-1.3-blue.svg)](https://kotlinlang.org/docs/reference/whatsnew13.html) 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+[![CircleCI](https://circleci.com/gh/thiyagu06/reactive-sqs-consumer.svg?style=svg)](https://circleci.com/gh/thiyagu06/reactive-sqs-consumer)
+[![codecov](https://codecov.io/gh/thiyagu06/retry4k/branch/master/graph/badge.svg)](https://codecov.io/gh/thiyagu06/retry4k)
+
 ## Usage
 
 ```kotlin
